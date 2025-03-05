@@ -80,6 +80,10 @@ class CategoryController extends Controller
      *             @OA\Property(property="name", type="string", example="Laptops"),
      *             @OA\Property(property="description", type="string", example="Laptop computers"),
      *             @OA\Property(property="parent_id", type="integer", nullable=true, example=1),
+     *             @OA\Property(property="color", type="string", example="#ffffff"),
+     *             @OA\Property(property="order", type="integer", example=1),
+     *             @OA\Property(property="is_active", type="boolean", example=true),
+     *             @OA\Property(property="image", type="string", format="binary", example="image/jpeg")
      *         )
      *     ),
      *     @OA\Response(
@@ -96,6 +100,10 @@ class CategoryController extends Controller
      *                 @OA\Property(property="slug", type="string", example="laptops"),
      *                 @OA\Property(property="description", type="string", example="Laptop computers"),
      *                 @OA\Property(property="parent_id", type="integer", example=1),
+     *                 @OA\Property(property="color", type="string", example="#ffffff"),
+     *                 @OA\Property(property="image_url", type="string", example="storage/categories/1643723400.jpg"),
+     *                 @OA\Property(property="order", type="integer", example=1),
+     *                 @OA\Property(property="is_active", type="boolean", example=true),
      *                 @OA\Property(property="created_at", type="string", format="date-time"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time")
      *             )
@@ -135,13 +143,29 @@ class CategoryController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'parent_id' => 'nullable|exists:categories,id',
+            'color' => 'nullable|string|max:50',
+            'order' => 'nullable|integer',
+            'is_active' => 'nullable|boolean',
         ]);
+        
+        // Handle image upload if present
+        $imageUrl = null;
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            $image = $request->file('image');
+            $filename = time() . '.' . $image->getClientOriginalExtension();
+            $image->storeAs('public/categories', $filename);
+            $imageUrl = 'storage/categories/' . $filename;
+        }
         
         $category = Category::create([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'description' => $request->description,
             'parent_id' => $request->parent_id,
+            'color' => $request->color,
+            'image_url' => $imageUrl,
+            'order' => $request->order ?? 0,
+            'is_active' => $request->is_active ?? true,
         ]);
         
         return response()->json([
@@ -305,28 +329,46 @@ class CategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $category = Category::findOrFail($id);
+        
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'parent_id' => 'nullable|exists:categories,id',
+            'parent_id' => [
+                'nullable',
+                function ($attribute, $value, $fail) use ($id) {
+                    if ($value == $id) {
+                        $fail('A category cannot be its own parent.');
+                    }
+                },
+                'exists:categories,id'
+            ],
+            'color' => 'nullable|string|max:50',
+            'order' => 'nullable|integer',
+            'is_active' => 'nullable|boolean',
         ]);
         
-        $category = Category::findOrFail($id);
-        
-        // Prevent category from being its own parent
-        if ($request->parent_id == $id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Category cannot be its own parent'
-            ], 400);
+        // Handle image upload if present
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            // Delete old image if exists
+            if ($category->image_url && file_exists(public_path($category->image_url))) {
+                unlink(public_path($category->image_url));
+            }
+            
+            $image = $request->file('image');
+            $filename = time() . '.' . $image->getClientOriginalExtension();
+            $image->storeAs('public/categories', $filename);
+            $category->image_url = 'storage/categories/' . $filename;
         }
         
-        $category->update([
-            'name' => $request->name,
-            'slug' => Str::slug($request->name),
-            'description' => $request->description,
-            'parent_id' => $request->parent_id,
-        ]);
+        $category->name = $request->name;
+        $category->slug = Str::slug($request->name);
+        $category->description = $request->description;
+        $category->parent_id = $request->parent_id;
+        $category->color = $request->color;
+        $category->order = $request->order ?? $category->order;
+        $category->is_active = $request->has('is_active') ? $request->is_active : $category->is_active;
+        $category->save();
         
         return response()->json([
             'status' => 'success',

@@ -19,6 +19,20 @@ class Category extends Model
         'slug',
         'description',
         'parent_id',
+        'color',
+        'image_url',
+        'order',
+        'is_active',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'is_active' => 'boolean',
+        'order' => 'integer',
     ];
 
     /**

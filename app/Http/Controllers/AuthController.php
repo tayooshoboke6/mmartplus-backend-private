@@ -519,4 +519,59 @@ class AuthController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Refresh the user's session token.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     * 
+     * @OA\Post(
+     *     path="/api/auth/refresh",
+     *     summary="Refresh user session token",
+     *     tags={"Authentication"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Token refreshed successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Token refreshed successfully"),
+     *             @OA\Property(property="token", type="string", example="2|laravel_sanctum_abcdef12345...")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated")
+     *         )
+     *     )
+     * )
+     */
+    public function refresh(Request $request)
+    {
+        // Get the current user
+        $user = $request->user();
+        
+        if (!$user) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
+        
+        // Revoke all tokens...
+        $user->tokens()->delete();
+        
+        // Create a fresh token
+        $token = $user->createToken('api-token')->plainTextToken;
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Token refreshed successfully',
+            'token' => $token,
+            'user' => $user
+        ]);
+    }
 }

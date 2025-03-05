@@ -14,6 +14,7 @@ use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\PhoneVerificationController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\VoucherController;
+use App\Http\Controllers\PromotionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -56,11 +57,16 @@ Route::get('/store-locations/pickup', [StoreLocationController::class, 'getPicku
 Route::get('/store-locations/nearby', [StoreLocationController::class, 'getNearby']);
 Route::get('/store-locations/{id}', [StoreLocationController::class, 'show']);
 
+// Public Promotion Routes
+Route::get('/banners', [PromotionController::class, 'getActiveBanners']);
+Route::get('/notification-bar', [PromotionController::class, 'getActiveNotificationBar']);
+
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
     // User Routes
     Route::get('/user', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/auth/refresh', [AuthController::class, 'refresh']);
     
     // Phone verification routes
     Route::post('/phone/verify/send', [PhoneVerificationController::class, 'send']);
@@ -112,6 +118,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/admin/products/{id}/images/primary', [ProductImageController::class, 'setPrimary']);
         
         // Admin Category Routes
+        Route::get('/admin/categories', [CategoryController::class, 'index']);
         Route::post('/admin/categories', [CategoryController::class, 'store']);
         Route::put('/admin/categories/{id}', [CategoryController::class, 'update']);
         Route::delete('/admin/categories/{id}', [CategoryController::class, 'destroy']);
@@ -121,6 +128,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/admin/store-locations/{id}', [StoreLocationController::class, 'update']);
         Route::delete('/admin/store-locations/{id}', [StoreLocationController::class, 'destroy']);
         Route::patch('/admin/store-locations/{id}/toggle-pickup', [StoreLocationController::class, 'togglePickupAvailability']);
+        
+        // Admin Promotion Routes
+        Route::get('/admin/banners', [PromotionController::class, 'getBanners']);
+        Route::post('/admin/banners', [PromotionController::class, 'storeBanner']);
+        Route::put('/admin/banners/{id}', [PromotionController::class, 'updateBanner']);
+        Route::delete('/admin/banners/{id}', [PromotionController::class, 'destroyBanner']);
+        Route::put('/admin/banners/{id}/toggle-status', [PromotionController::class, 'toggleBannerStatus']);
+        
+        Route::get('/admin/notification-bar', [PromotionController::class, 'getNotificationBar']);
+        Route::put('/admin/notification-bar', [PromotionController::class, 'updateNotificationBar']);
+        Route::put('/admin/notification-bar/toggle-status', [PromotionController::class, 'toggleNotificationBarStatus']);
         
         // Admin User Management Routes
         Route::get('/admin/users', [UserController::class, 'index']);

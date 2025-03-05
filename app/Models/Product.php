@@ -17,12 +17,16 @@ class Product extends Model
     protected $fillable = [
         'name',
         'description',
+        'short_description',
         'price',
         'stock',
         'sku',
         'is_active',
+        'is_featured',
         'category_id',
         'images',
+        'expiry_date',
+        'slug',
     ];
 
     /**
@@ -33,7 +37,9 @@ class Product extends Model
     protected $casts = [
         'price' => 'float',
         'is_active' => 'boolean',
+        'is_featured' => 'boolean',
         'images' => 'array',
+        'expiry_date' => 'date',
     ];
 
     /**

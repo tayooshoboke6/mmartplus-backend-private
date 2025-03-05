@@ -160,6 +160,22 @@ class ProductController extends Controller
         
         $products = $query->paginate($request->per_page ?? 12);
         
+        // Transform products to ensure proper image formatting
+        $transformedProducts = $products->getCollection()->map(function ($product) {
+            // Make sure images field is properly formatted as array
+            if (is_string($product->images)) {
+                $product->images = json_decode($product->images, true);
+            }
+            
+            // Ensure stock is provided correctly
+            $product->stock = $product->stock;
+            
+            return $product;
+        });
+        
+        // Replace the collection with our transformed collection
+        $products->setCollection($transformedProducts);
+        
         return response()->json([
             'status' => 'success',
             'data' => $products
@@ -273,35 +289,55 @@ class ProductController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255|unique:products,slug',
             'description' => 'nullable|string',
+            'short_description' => 'nullable|string|max:500',
             'price' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'category_id' => 'required|exists:categories,id',
+            'is_featured' => 'boolean',
             'is_active' => 'boolean',
-            'images' => 'nullable|array',
+            'expiry_date' => 'nullable|date',
+            'images.*' => 'nullable|image|max:2048',
         ]);
         
-        // Generate a unique SKU
-        $sku = Str::upper(Str::random(8));
+        // Generate a unique SKU if not provided
+        $sku = $request->sku ?? Str::upper(Str::random(8));
         while (Product::where('sku', $sku)->exists()) {
             $sku = Str::upper(Str::random(8));
         }
         
+        // Generate slug if not provided
+        $slug = $request->slug ?? Str::slug($request->name);
+        
+        // Handle image uploads
+        $images = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $imagePath = $image->store('products', 'public');
+                $images[] = asset('storage/' . $imagePath);
+            }
+        }
+        
         $product = Product::create([
             'name' => $request->name,
+            'slug' => $slug,
             'description' => $request->description,
+            'short_description' => $request->short_description,
             'price' => $request->price,
             'stock' => $request->stock,
             'sku' => $sku,
-            'is_active' => $request->is_active ?? true,
+            'is_featured' => $request->boolean('is_featured'),
+            'is_active' => $request->boolean('is_active', true),
             'category_id' => $request->category_id,
-            'images' => $request->images,
+            'expiry_date' => $request->expiry_date,
+            'images' => json_encode($images),
         ]);
         
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => 'Product created successfully',
-            'data' => $product->load('category')
+            'product' => $product->load('category')
         ], 201);
     }
 
@@ -487,21 +523,57 @@ class ProductController extends Controller
         $product = Product::findOrFail($id);
         
         $request->validate([
-            'name' => 'string|max:255',
+            'name' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255|unique:products,slug,' . $product->id,
             'description' => 'nullable|string',
-            'price' => 'numeric|min:0',
-            'stock' => 'integer|min:0',
-            'category_id' => 'exists:categories,id',
+            'short_description' => 'nullable|string|max:500',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'category_id' => 'required|exists:categories,id',
+            'is_featured' => 'boolean',
             'is_active' => 'boolean',
-            'images' => 'nullable|array',
+            'expiry_date' => 'nullable|date',
+            'images.*' => 'nullable|image|max:2048',
+            'existing_images' => 'nullable|json',
         ]);
         
-        $product->update($request->all());
+        // Generate slug if not provided
+        $slug = $request->slug ?? Str::slug($request->name);
+        
+        // Handle image uploads and existing images
+        $existingImages = [];
+        if ($request->existing_images) {
+            $existingImages = json_decode($request->existing_images, true);
+        } else if (is_string($product->images)) {
+            $existingImages = json_decode($product->images, true) ?? [];
+        }
+        
+        // Add new images
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $imagePath = $image->store('products', 'public');
+                $existingImages[] = asset('storage/' . $imagePath);
+            }
+        }
+        
+        $product->update([
+            'name' => $request->name,
+            'slug' => $slug,
+            'description' => $request->description,
+            'short_description' => $request->short_description,
+            'price' => $request->price,
+            'stock' => $request->stock,
+            'is_featured' => $request->boolean('is_featured'),
+            'is_active' => $request->boolean('is_active'),
+            'category_id' => $request->category_id,
+            'expiry_date' => $request->expiry_date,
+            'images' => json_encode($existingImages),
+        ]);
         
         return response()->json([
-            'status' => 'success',
+            'success' => true,
             'message' => 'Product updated successfully',
-            'data' => $product->fresh('category')
+            'product' => $product->load('category')
         ]);
     }
 
