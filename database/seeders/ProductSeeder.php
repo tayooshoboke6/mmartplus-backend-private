@@ -24,6 +24,12 @@ class ProductSeeder extends Seeder
             return;
         }
 
+        // Map of category names to their IDs
+        $categoryIds = [];
+        foreach ($categories as $category) {
+            $categoryIds[$category->name] = $category->id;
+        }
+
         // Sample product data
         $products = [
             [
@@ -138,18 +144,102 @@ class ProductSeeder extends Seeder
                 'expiry_date' => null,
                 'slug' => 'laundry-detergent-2kg',
             ],
+            [
+                'name' => 'Jollof Rice Spice Mix',
+                'description' => 'Premium authentic Jollof rice spice mix. Contains all the necessary spices to prepare the perfect Nigerian Jollof rice. Made with natural ingredients including dried pepper, thyme, curry powder, bay leaves, and other special spices. 250g package.',
+                'short_description' => 'Complete authentic spice mix for perfect Jollof rice',
+                'price' => 1500.00,
+                'stock' => 100,
+                'sku' => 'NIG-JOLLOF-01',
+                'is_active' => true,
+                'is_featured' => true,
+                'category_id' => $categoryIds['Nigerian Foods'] ?? $categories->random()->id,
+                'images' => json_encode(['products/jollof-spice.jpg']),
+                'expiry_date' => now()->addMonths(6)->format('Y-m-d'),
+                'slug' => 'jollof-rice-spice-mix',
+            ],
+            [
+                'name' => 'Nigerian Premium Honey',
+                'description' => 'Pure natural honey sourced from Nigerian bee farms. No additives or preservatives. Great for sweetening tea, spread on bread, or used in traditional remedies. Rich in antioxidants and nutrients. 500ml glass jar.',
+                'short_description' => 'Pure natural honey from Nigerian farms',
+                'price' => 3500.00,
+                'stock' => 50,
+                'sku' => 'NIG-HONEY-01',
+                'is_active' => true,
+                'is_featured' => false,
+                'category_id' => $categoryIds['Nigerian Foods'] ?? $categories->random()->id,
+                'images' => json_encode(['products/nigerian-honey.jpg']),
+                'expiry_date' => now()->addYears(1)->format('Y-m-d'),
+                'slug' => 'nigerian-premium-honey',
+            ],
+            [
+                'name' => 'Solar Power Bank 20000mAh',
+                'description' => 'High-capacity solar power bank with dual USB ports. Built-in solar panel for charging in emergency situations. Perfect for Nigeria\'s power challenges. Features fast charging technology, LED flashlight, and water-resistant casing. A must-have for every Nigerian home and office.',
+                'short_description' => 'Solar-powered 20000mAh power bank with dual USB ports',
+                'price' => 12000.00,
+                'stock' => 30,
+                'sku' => 'ELECT-SOLAR-01',
+                'is_active' => true,
+                'is_featured' => true,
+                'category_id' => $categoryIds['Electronics'] ?? $categories->random()->id,
+                'images' => json_encode(['products/solar-powerbank.jpg']),
+                'expiry_date' => null,
+                'slug' => 'solar-power-bank-20000mah',
+            ],
+            [
+                'name' => 'Adire Fabric Set',
+                'description' => 'Traditional hand-dyed Adire fabric from Abeokuta. Each piece is unique with intricate patterns created using resist-dye techniques passed down through generations. Set includes 2 yards of premium quality cotton fabric in beautiful indigo pattern. Perfect for creating clothing, home decor, or as a conversation piece.',
+                'short_description' => 'Hand-dyed traditional Nigerian fabric from Abeokuta',
+                'price' => 8000.00,
+                'stock' => 25,
+                'sku' => 'FASH-ADIRE-01',
+                'is_active' => true,
+                'is_featured' => true,
+                'category_id' => $categoryIds['Fashion'] ?? $categories->random()->id,
+                'images' => json_encode(['products/adire-fabric.jpg']),
+                'expiry_date' => null,
+                'slug' => 'adire-fabric-set',
+            ],
+            [
+                'name' => 'Clay Cooking Pot (Ikoko)',
+                'description' => 'Traditional Nigerian clay pot for cooking soups and stews. Handcrafted by skilled artisans using time-honored techniques. Enhances flavor and retains nutrients during cooking. The porous nature allows for slow, even cooking, making it perfect for preparing traditional Nigerian dishes like Efo Riro and Egusi soup. Medium size suitable for family meals.',
+                'short_description' => 'Traditional clay pot for authentic Nigerian cooking',
+                'price' => 4500.00,
+                'stock' => 20,
+                'sku' => 'HOME-IKOKO-01',
+                'is_active' => true,
+                'is_featured' => false,
+                'category_id' => $categoryIds['Home & Kitchen'] ?? $categories->random()->id,
+                'images' => json_encode(['products/clay-pot.jpg']),
+                'expiry_date' => null,
+                'slug' => 'clay-cooking-pot-ikoko',
+            ],
+            [
+                'name' => 'African Black Soap',
+                'description' => 'Authentic black soap made from plantain skin ash, cocoa pod, palm oil, and shea butter. Made using traditional West African methods. Great for all skin types, especially those with eczema, acne, or sensitive skin. The soap cleanses deeply while being gentle on the skin. A staple in Nigerian skincare routines. 250g bar.',
+                'short_description' => 'Traditional plantain ash soap for skincare',
+                'price' => 2000.00,
+                'stock' => 75,
+                'sku' => 'HEALTH-SOAP-01',
+                'is_active' => true,
+                'is_featured' => true,
+                'category_id' => $categoryIds['Health & Beauty'] ?? $categories->random()->id,
+                'images' => json_encode(['products/black-soap.jpg']),
+                'expiry_date' => now()->addYears(2)->format('Y-m-d'),
+                'slug' => 'african-black-soap',
+            ],
         ];
 
         foreach ($products as $productData) {
-            // Check if product already exists
-            $existingProduct = Product::where('sku', $productData['sku'])->first();
+            $product = Product::where('sku', $productData['sku'])->first();
             
-            if (!$existingProduct) {
-                $product = Product::create($productData);
-                $this->command->info("Created product: {$product->name}");
+            if (!$product) {
+                Product::create($productData);
             } else {
-                $this->command->info("Product '{$productData['name']}' already exists. Skipping.");
+                $product->update($productData);
             }
         }
+
+        $this->command->info('Products seeded successfully!');
     }
 }

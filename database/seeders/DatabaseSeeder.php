@@ -17,27 +17,12 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             StoreLocationSeeder::class,
-            CategorySeeder::class,
-            ProductSeeder::class,
+            ProductCategorySeeder::class, // Our new category seeder
+            ProductSeeder::class, // Updated with Nigerian products
+            UserRoleSeeder::class, // Our new user and role seeder
             OrderSeeder::class,
         ]);
         
-        // Create an admin user
-        $admin = \App\Models\User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@mmart.com',
-            'password' => bcrypt('password'),
-            'email_verified_at' => now(),
-        ]);
-        $admin->assignRole('admin');
-        
-        // Create a customer user
-        $customer = \App\Models\User::factory()->create([
-            'name' => 'Test Customer',
-            'email' => 'customer@example.com',
-            'password' => bcrypt('password'),
-            'email_verified_at' => now(),
-        ]);
-        $customer->assignRole('customer');
+        // Admin and customer users are now created in UserRoleSeeder
     }
 }

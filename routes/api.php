@@ -16,6 +16,7 @@ use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\ProductSectionController;
+use App\Http\Controllers\PasswordResetController;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,6 +46,10 @@ Route::post('/email/non-auth/verify', [EmailVerificationController::class, 'veri
 // Social Authentication Routes
 Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirectToProvider']);
 Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'handleProviderCallback']);
+
+// Password Reset Routes
+Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
+Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 
 // Public Routes
 Route::get('/products', [ProductController::class, 'index']);
