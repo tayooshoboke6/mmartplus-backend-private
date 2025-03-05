@@ -15,6 +15,7 @@ use App\Http\Controllers\PhoneVerificationController;
 use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\ProductSectionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -147,5 +148,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/admin/users/{id}', [UserController::class, 'update']);
         Route::delete('/admin/users/{id}', [UserController::class, 'destroy']);
         Route::get('/admin/roles', [UserController::class, 'getRoles']);
+        
+        // Admin Product Section Routes
+        Route::apiResource('/admin/product-sections', ProductSectionController::class);
+        Route::post('/admin/product-sections/reorder', [ProductSectionController::class, 'reorder']);
+        Route::patch('/admin/product-sections/{id}/toggle', [ProductSectionController::class, 'toggleStatus']);
     });
 });

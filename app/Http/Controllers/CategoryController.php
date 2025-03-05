@@ -140,13 +140,26 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:categories,name',
             'description' => 'nullable|string',
             'parent_id' => 'nullable|exists:categories,id',
             'color' => 'nullable|string|max:50',
             'order' => 'nullable|integer',
             'is_active' => 'nullable|boolean',
         ]);
+        
+        // Check if a slug derived from the name would be unique
+        $proposedSlug = Str::slug($request->name);
+        $slugExists = Category::where('slug', $proposedSlug)->exists();
+        if ($slugExists) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'A category with a similar name already exists, resulting in a duplicate slug. Please use a different name.',
+                'errors' => [
+                    'name' => ['This name generates a slug that is already in use.']
+                ]
+            ], 422);
+        }
         
         // Handle image upload if present
         $imageUrl = null;
@@ -159,7 +172,7 @@ class CategoryController extends Controller
         
         $category = Category::create([
             'name' => $request->name,
-            'slug' => Str::slug($request->name),
+            'slug' => $proposedSlug,
             'description' => $request->description,
             'parent_id' => $request->parent_id,
             'color' => $request->color,
@@ -332,7 +345,7 @@ class CategoryController extends Controller
         $category = Category::findOrFail($id);
         
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => "required|string|max:255|unique:categories,name,{$id}",
             'description' => 'nullable|string',
             'parent_id' => [
                 'nullable',
@@ -348,6 +361,21 @@ class CategoryController extends Controller
             'is_active' => 'nullable|boolean',
         ]);
         
+        // Check if a slug derived from the name would be unique (excluding current category)
+        $proposedSlug = Str::slug($request->name);
+        $slugExists = Category::where('slug', $proposedSlug)
+                             ->where('id', '!=', $id)
+                             ->exists();
+        if ($slugExists) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'A category with a similar name already exists, resulting in a duplicate slug. Please use a different name.',
+                'errors' => [
+                    'name' => ['This name generates a slug that is already in use.']
+                ]
+            ], 422);
+        }
+        
         // Handle image upload if present
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             // Delete old image if exists
@@ -362,7 +390,7 @@ class CategoryController extends Controller
         }
         
         $category->name = $request->name;
-        $category->slug = Str::slug($request->name);
+        $category->slug = $proposedSlug;
         $category->description = $request->description;
         $category->parent_id = $request->parent_id;
         $category->color = $request->color;
