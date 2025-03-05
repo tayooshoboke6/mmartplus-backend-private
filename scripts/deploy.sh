@@ -8,9 +8,9 @@ set -e
 
 # Configuration
 REMOTE_USER="root"
-REMOTE_HOST="your_server_ip"
+REMOTE_HOST="24.144.94.121"
 REMOTE_DIR="/var/www/mmartplus"
-REPO_URL="https://github.com/yourusername/mmartplus-backend.git"
+REPO_URL="https://github.com/tayooshoboke6/mmartplus-backend-private.git"
 
 # Colors for output
 GREEN='\033[0;32m'
