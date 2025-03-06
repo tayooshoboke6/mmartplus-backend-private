@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Services\Email\EmailVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class EmailVerificationController extends Controller
 {
@@ -231,73 +230,46 @@ class EmailVerificationController extends Controller
      */
     public function sendNonAuth(Request $request)
     {
-        // Log detailed request information for debugging CORS issues
-        Log::info('Email verification non-auth request received', [
-            'headers' => request()->headers->all(),
-            'origin' => request()->header('Origin'),
-            'method' => request()->method(),
-            'ip' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-            'request_data' => $request->all()
+        $request->validate([
+            'email' => 'required|string|email',
         ]);
         
-        try {
-            $request->validate([
-                'email' => 'required|string|email',
-            ]);
-            
-            $user = \App\Models\User::where('email', $request->email)->first();
-            
-            if ($user) {
-                // Check if email is already verified
-                if ($user->email_verified_at) {
-                    Log::info('Email already verified', ['email' => $request->email]);
-                    return response()->json([
-                        'status' => 'error',
-                        'message' => 'Email is already verified.'
-                    ], 400);
-                }
-                
-                // Send verification code to email
-                $this->emailVerificationService->sendVerificationEmail($user);
-                
-                Log::info('Verification code sent to existing user', ['email' => $request->email]);
+        $user = \App\Models\User::where('email', $request->email)->first();
+        
+        if ($user) {
+            // Check if email is already verified
+            if ($user->email_verified_at) {
                 return response()->json([
-                    'status' => 'success',
-                    'message' => 'Verification code sent successfully. Please check your email.'
-                ]);
-            } else {
-                // Create a temporary record for verification purposes
-                $tempCode = $this->emailVerificationService->generateVerificationCode();
-                
-                // Store the code in the email_verification table without a user_id
-                \App\Models\EmailVerification::create([
-                    'email' => $request->email,
-                    'code' => $tempCode,
-                    'expires_at' => now()->addMinutes(30),
-                ]);
-                
-                // Send verification code to the email
-                $this->emailVerificationService->sendVerificationEmailRaw($request->email, $tempCode);
-                
-                Log::info('Verification code sent to new email', ['email' => $request->email]);
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Verification code sent successfully. Please check your email.'
-                ]);
+                    'status' => 'error',
+                    'message' => 'Email is already verified.'
+                ], 400);
             }
-        } catch (\Exception $e) {
-            // Log any exceptions that occur
-            Log::error('Error in email verification process', [
-                'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'email' => $request->email ?? 'not provided'
-            ]);
+            
+            // Send verification code to email
+            $this->emailVerificationService->sendVerificationEmail($user);
             
             return response()->json([
-                'status' => 'error',
-                'message' => 'An error occurred while processing your request.'
-            ], 500);
+                'status' => 'success',
+                'message' => 'Verification code sent successfully. Please check your email.'
+            ]);
+        } else {
+            // Create a temporary record for verification purposes
+            $tempCode = $this->emailVerificationService->generateVerificationCode();
+            
+            // Store the code in the email_verification table without a user_id
+            \App\Models\EmailVerification::create([
+                'email' => $request->email,
+                'code' => $tempCode,
+                'expires_at' => now()->addMinutes(30),
+            ]);
+            
+            // Send verification code to the email
+            $this->emailVerificationService->sendVerificationEmailRaw($request->email, $tempCode);
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Verification code sent successfully. Please check your email.'
+            ]);
         }
     }
     

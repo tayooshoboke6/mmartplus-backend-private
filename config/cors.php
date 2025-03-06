@@ -28,6 +28,8 @@ return [
         'https://www.m-martplus.com',
         'https://mmartplus-frontend-private.vercel.app',
         'https://mmartplus-frontend-private-tayooshoboke6s-projects.vercel.app',
+    
+        'https://mmartplus-frontend-private-git-master-tayooshoboke6s-projects.vercel.app',
     ],
 
     'allowed_origins_patterns' => [],
