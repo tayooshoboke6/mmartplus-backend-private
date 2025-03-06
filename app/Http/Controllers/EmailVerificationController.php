@@ -231,33 +231,46 @@ class EmailVerificationController extends Controller
     public function sendNonAuth(Request $request)
     {
         $request->validate([
-            'email' => 'required|string|email|exists:users,email',
+            'email' => 'required|string|email',
         ]);
         
         $user = \App\Models\User::where('email', $request->email)->first();
         
-        if (!$user) {
+        if ($user) {
+            // Check if email is already verified
+            if ($user->email_verified_at) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Email is already verified.'
+                ], 400);
+            }
+            
+            // Send verification code to email
+            $this->emailVerificationService->sendVerificationEmail($user);
+            
             return response()->json([
-                'status' => 'error',
-                'message' => 'User not found.'
-            ], 404);
-        }
-        
-        // Check if email is already verified
-        if ($user->email_verified_at) {
+                'status' => 'success',
+                'message' => 'Verification code sent successfully. Please check your email.'
+            ]);
+        } else {
+            // Create a temporary record for verification purposes
+            $tempCode = $this->emailVerificationService->generateVerificationCode();
+            
+            // Store the code in the email_verification table without a user_id
+            \App\Models\EmailVerification::create([
+                'email' => $request->email,
+                'code' => $tempCode,
+                'expires_at' => now()->addMinutes(30),
+            ]);
+            
+            // Send verification code to the email
+            $this->emailVerificationService->sendVerificationEmailRaw($request->email, $tempCode);
+            
             return response()->json([
-                'status' => 'error',
-                'message' => 'Email is already verified.'
-            ], 400);
+                'status' => 'success',
+                'message' => 'Verification code sent successfully. Please check your email.'
+            ]);
         }
-        
-        // Send verification code to email
-        $this->emailVerificationService->sendVerificationEmail($user);
-        
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Verification code sent successfully. Please check your email.'
-        ]);
     }
     
     /**
@@ -307,40 +320,58 @@ class EmailVerificationController extends Controller
     public function verifyNonAuth(Request $request)
     {
         $request->validate([
-            'email' => 'required|string|email|exists:users,email',
+            'email' => 'required|string|email',
             'code' => 'required|string',
         ]);
         
+        // Check if the email exists in the users table
         $user = \App\Models\User::where('email', $request->email)->first();
         
-        if (!$user) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'User not found.'
-            ], 404);
-        }
-        
-        // Check if email is already verified
-        if ($user->email_verified_at) {
+        if ($user) {
+            // Check if email is already verified
+            if ($user->email_verified_at) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Email is already verified.'
+                ]);
+            }
+            
+            // Verify the code for existing user
+            $verified = $this->emailVerificationService->verifyEmail($user, $request->code);
+            
+            if (!$verified) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid or expired verification code.'
+                ], 400);
+            }
+            
             return response()->json([
                 'status' => 'success',
-                'message' => 'Email is already verified.'
+                'message' => 'Email verified successfully.'
+            ]);
+        } else {
+            // Check for verification in the email_verification table for users that don't exist yet
+            $verification = \App\Models\EmailVerification::where('email', $request->email)
+                ->where('code', $request->code)
+                ->where('expires_at', '>', now())
+                ->where('is_used', false)
+                ->first();
+            
+            if (!$verification) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid or expired verification code.'
+                ], 400);
+            }
+            
+            // Mark the code as used
+            $verification->update(['is_used' => true]);
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Email verified successfully.'
             ]);
         }
-        
-        // Verify the code
-        $verified = $this->emailVerificationService->verifyEmail($user, $request->code);
-        
-        if (!$verified) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Invalid or expired verification code.'
-            ], 400);
-        }
-        
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Email verified successfully.'
-        ]);
     }
 }

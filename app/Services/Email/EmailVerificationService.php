@@ -121,4 +121,57 @@ class EmailVerificationService
             'code' => $code
         ])->render();
     }
+    
+    /**
+     * Generate a verification code and return it.
+     * 
+     * @return string
+     */
+    public function generateVerificationCode(): string
+    {
+        // Generate a new 6-digit code
+        return (string) random_int(100000, 999999);
+    }
+    
+    /**
+     * Send a verification email to an email address that may not be associated with a user yet.
+     *
+     * @param string $email
+     * @param string $code
+     * @return void
+     */
+    public function sendVerificationEmailRaw(string $email, string $code): void
+    {
+        // Create the email content
+        $subject = 'Verify Your Email Address - ' . config('app.name');
+        
+        // Create content with simpler template (no user-specific data)
+        $content = $this->getEmailVerificationTemplateRaw($email, $code);
+        
+        // Send the email
+        $this->emailService->send(
+            $email,
+            $subject,
+            $content,
+            config('app.name'),
+            null
+        );
+    }
+    
+    /**
+     * Get the email verification template for raw emails (without user records)
+     *
+     * @param string $email
+     * @param string $code
+     * @return string
+     */
+    protected function getEmailVerificationTemplateRaw(string $email, string $code): string
+    {
+        // You can customize this template for non-user verification
+        return view('emails.verify-email-simple', [
+            'code' => $code,
+            'email' => $email,
+            'expires' => '30 minutes',
+        ])->render();
+    }
 }
