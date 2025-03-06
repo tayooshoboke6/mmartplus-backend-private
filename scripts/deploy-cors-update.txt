@@ -1,0 +1,41 @@
+## Deploy CORS Update to Digital Ocean Server
+
+Follow these steps to update the CORS configuration on your Digital Ocean server:
+
+1. SSH into your server:
+   ```bash
+   ssh {username}@{your-server-ip}
+   ```
+
+2. Navigate to your project directory:
+   ```bash
+   cd /path/to/mmartplus-backend
+   ```
+
+3. Pull the latest changes from GitHub:
+   ```bash
+   git pull origin main
+   ```
+
+4. Clear the Laravel configuration cache:
+   ```bash
+   php artisan config:clear
+   ```
+
+5. Restart the PHP-FPM service (if using):
+   ```bash
+   sudo service php8.1-fpm restart
+   # OR
+   sudo systemctl restart php8.1-fpm
+   ```
+
+6. Restart the web server:
+   ```bash
+   sudo service nginx restart
+   # OR
+   sudo systemctl restart nginx
+   ```
+
+7. Verify the configuration by checking if CORS is working correctly.
+
+Note: Replace `{username}`, `{your-server-ip}`, and `/path/to/mmartplus-backend` with your actual server details.
