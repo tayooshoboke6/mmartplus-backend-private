@@ -29,6 +29,9 @@ use App\Http\Controllers\PasswordResetController;
 |
 */
 
+// Include testing routes 
+require __DIR__ . '/api-test.php';
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
