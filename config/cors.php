@@ -22,8 +22,12 @@ return [
     'allowed_origins' => [
         'http://localhost:3000', 
         'http://127.0.0.1:3000',
+        'http://localhost:4173',
+        'http://127.0.0.1:4173',
         'https://m-martplus.com',
         'https://www.m-martplus.com',
+        'https://mmartplus-frontend-private.vercel.app',
+        'https://mmartplus-frontend-private-tayooshoboke6s-projects.vercel.app',
     ],
 
     'allowed_origins_patterns' => [],
