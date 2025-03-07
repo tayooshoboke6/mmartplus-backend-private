@@ -28,9 +28,6 @@ class Product extends Model
         'expiry_date',
         'slug',
         'delivery_time',
-        'average_rating',
-        'rating_count',
-        'bayesian_rating',
     ];
 
     /**
@@ -44,9 +41,6 @@ class Product extends Model
         'is_featured' => 'boolean',
         'images' => 'array',
         'expiry_date' => 'date',
-        'average_rating' => 'float',
-        'rating_count' => 'integer',
-        'bayesian_rating' => 'float',
     ];
 
     /**
@@ -55,14 +49,6 @@ class Product extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
-    }
-
-    /**
-     * Get the ratings for the product.
-     */
-    public function ratings()
-    {
-        return $this->hasMany(ProductRating::class);
     }
 
     /**

@@ -1,0 +1,88 @@
+Checking from application directory: /var/www/mmartplus
+
+1. CHECKING FILE DEPLOYMENT
+-------------------------
+✅ app/Services/RatingService.php exists
+✅ app/Models/Product.php exists
+✅ app/Http/Controllers/ProductRatingController.php exists
+✅ app/Console/Commands/RecalculateProductRatings.php exists
+✅ database/migrations/2025_03_07_000000_add_bayesian_rating_to_products_table.php exists
+✅ routes/api.php exists
+
+All required files are properly deployed.
+
+2. CHECKING API ROUTES
+-------------------
+✅ Admin rating adjustment route exists in api.php
+✅ Authentication routes using '/auth/login' pattern exist
+
+3. CHECKING DATABASE SCHEMA
+------------------------
+Running database schema verification...
+Checking products table schema...
+✅ Column 'average_rating' exists in products table
+✅ Column 'rating_count' exists in products table
+✅ Column 'bayesian_rating' exists in products table
+
+All required columns exist in the database schema.
+
+Checking if any products have bayesian ratings:
+⚠️ No products have bayesian ratings greater than 0
+This is normal for a new installation with no ratings yet
+
+Sample product data:
+ID: 1, Name: Fresh Whole Milk
+Average Rating: 4.00
+Rating Count: 0
+Bayesian Rating: 0
+
+4. CHECKING RATING SERVICE
+------------------------
+Running RatingService verification...
+Checking RatingService functionality...
+✅ RatingService class loaded successfully
+✅ Method 'calculateBayesianRating' exists in RatingService
+✅ Method 'recalculateAllProductRatings' exists in RatingService
+
+   TypeError 
+
+  App\Services\RatingService::calculateBayesianRating(): Argument #1 ($product) must be of type App\Models\Product, stdClass given
+
+  at app/Services/RatingService.php:31
+     27▕      * 
+     28▕      * @param \App\Models\Product $product
+     29▕      * @return float
+     30▕      */
+  ➜  31▕     public function calculateBayesianRating(Product $product)
+     32▕     {
+     33▕         // If no ratings, return 0
+     34▕         if ($product->rating_count === 0) {
+     35▕             return 0;
+
+  1   [internal]:0
+      App\Services\RatingService::calculateBayesianRating()
+
+  2   check_rating_service.php:40
+      ReflectionMethod::invoke()
+
+5. CHECKING CONTROLLER METHODS
+----------------------------
+Running Controller verification...
+Checking ProductRatingController...
+✅ ProductRatingController class exists
+✅ Method 'adminAdjustRating' exists in ProductRatingController
+✅ Method 'rateProduct' exists in ProductRatingController
+✅ Method 'getProductRatings' exists in ProductRatingController
+
+=====================================================
+VERIFICATION SUMMARY
+=====================================================
+Completed at: Fri Mar  7 17:20:01 UTC 2025
+
+A detailed verification log has been saved to: /var/www/mmartplus/deployment_verification.log
+
+To address any issues identified above, you may need to:
+1. Re-upload missing files
+2. Re-run the database migration
+3. Check Laravel error logs for additional diagnostics
+=====================================================
