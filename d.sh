@@ -1,3 +1,32 @@
+#!/bin/bash
+
+# Script to fix syntax error in ProductController.php
+# Run this script on your Digital Ocean server
+
+# Colors for pretty output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+echo -e "${YELLOW}Starting ProductController syntax error fix...${NC}"
+
+# Navigate to the Laravel project directory
+cd /var/www/mmartplus || {
+    echo -e "${RED}Failed to navigate to the Laravel project directory.${NC}"
+    exit 1
+}
+
+# Backup the current ProductController file
+echo -e "${YELLOW}Creating backup of the current ProductController...${NC}"
+cp app/Http/Controllers/ProductController.php app/Http/Controllers/ProductController.php.backup.$(date +%Y%m%d%H%M%S)
+
+# Fix the syntax issue by replacing the entire method implementation
+echo -e "${YELLOW}Checking controller file structure...${NC}"
+
+# Fixing the issue by directly editing the file with better syntax handling
+# Create a temporary file
+cat > /tmp/fixed_controller.php << 'EOL'
 <?php
 
 namespace App\Http\Controllers;
@@ -345,3 +374,42 @@ class ProductController extends Controller
         ]);
     }
 }
+EOL
+
+# Check if the temporary file was created successfully
+if [ ! -f /tmp/fixed_controller.php ]; then
+    echo -e "${RED}Failed to create temporary file for fixed controller.${NC}"
+    exit 1
+fi
+
+# Replace the current controller with the fixed version
+echo -e "${YELLOW}Replacing the controller with fixed version...${NC}"
+cp /tmp/fixed_controller.php app/Http/Controllers/ProductController.php
+
+# Update file permissions
+echo -e "${YELLOW}Setting proper file permissions...${NC}"
+chmod 644 app/Http/Controllers/ProductController.php
+chown www-data:www-data app/Http/Controllers/ProductController.php
+
+# Clean up
+rm /tmp/fixed_controller.php
+
+# Clear Laravel cache
+echo -e "${YELLOW}Clearing Laravel cache...${NC}"
+php artisan cache:clear
+php artisan route:clear
+php artisan config:clear
+php artisan view:clear
+php artisan optimize
+
+# Restart the web server
+echo -e "${YELLOW}Restarting PHP-FPM...${NC}"
+systemctl restart php8.1-fpm.service
+
+echo -e "${GREEN}ProductController syntax fix completed successfully!${NC}"
+echo -e "${YELLOW}Try the product slug endpoint again with Postman.${NC}"
+echo -e "${YELLOW}URL: https://api.m-martplus.com/api/products/slug/{slug}${NC}"
+echo -e "${YELLOW}If you encounter any issues, you can restore the backup from:${NC} app/Http/Controllers/ProductController.php.backup.*"
+
+exit 0
+

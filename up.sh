@@ -1,3 +1,29 @@
+#!/bin/bash
+
+# Script to update product API routes to be publicly accessible
+# Run this script on your Digital Ocean server
+
+# Colors for pretty output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+echo -e "${YELLOW}Starting M-Mart+ API route update script...${NC}"
+
+# Navigate to the Laravel project directory
+# Update this path if your Laravel project is in a different location
+cd /var/www/mmartplus || {
+    echo -e "${RED}Failed to navigate to the Laravel project directory. Please check the path.${NC}"
+    exit 1
+}
+
+# Backup the current routes file
+echo -e "${YELLOW}Creating backup of the current routes file...${NC}"
+cp routes/api.php routes/api.php.backup.$(date +%Y%m%d%H%M%S)
+
+# Create a temporary file with updated route configuration
+cat > routes/api.php.new << 'EOL'
 <?php
 
 use Illuminate\Http\Request;
@@ -145,3 +171,31 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // Dashboard statistics
     Route::get('/dashboard', [UserController::class, 'dashboard']);
 });
+EOL
+
+# Replace the current routes file with the updated one
+echo -e "${YELLOW}Updating API routes configuration...${NC}"
+mv routes/api.php.new routes/api.php
+
+# Update file permissions
+echo -e "${YELLOW}Setting proper file permissions...${NC}"
+chmod 644 routes/api.php
+chown www-data:www-data routes/api.php
+
+# Clear Laravel cache
+echo -e "${YELLOW}Clearing Laravel cache...${NC}"
+php artisan cache:clear
+php artisan route:clear
+php artisan config:clear
+
+# Restart the web server
+echo -e "${YELLOW}Restarting web server...${NC}"
+service nginx restart
+service php8.2-fpm restart # Update with your PHP version if different
+
+echo -e "${GREEN}API route update completed successfully!${NC}"
+echo -e "${YELLOW}The product endpoints should now be publicly accessible without authentication.${NC}"
+echo -e "${YELLOW}If you encounter any issues, you can restore the backup from:${NC} routes/api.php.backup.*"
+
+exit 0
+
